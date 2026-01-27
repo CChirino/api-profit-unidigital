@@ -1,0 +1,302 @@
+https://mis-api.internetccom.net/sale/invoice/massive/dispatch/pre
+{
+    "filter": [
+        {
+            "where": "invoice.deleted",
+            "operator": "eq",
+            "value": "0"
+        },
+        {
+            "and": true,
+            "where": "invoice.campo7",
+            "operator": "null"
+        },
+        {
+            "and": true,
+            "where": "invoice.doc_num",
+            "operator": "btw",
+            "value": [
+                "000355498",
+                "000355501"
+            ]
+        }
+    ],
+    "description": "Prueba 11/08/25",
+    "from": [
+        "000355498"
+    ],
+    "to": [
+        "000355501"
+    ]
+}
+https://www.unidigital.global/digitalinvoiceservice/api/series/list
+{
+    "result": [
+        {
+            "strongId": "3b633c48-271a-459f-bc8e-a35139d3a0ae",
+            "name": "0",
+            "calculatedByCompany": true
+        }
+    ],
+    "errors": [],
+    "success": [],
+    "information": [],
+    "haserrors": false
+}
+https://www.unidigital.global/digitalinvoiceservice/api/batch/open
+{
+    "SerieStrongId": "3b633c48-271a-459f-bc8e-a35139d3a0ae"
+}
+https://www.unidigital.global/digitalinvoiceservice/api/documents/create
+{
+    "BatchStrongId": "b4bb3393-de4b-4da1-8d23-9f65a3279007",
+    "Docs": [
+        {
+            "DocumentType": "FA",
+            "Number": 355498,
+            "EmissionDateAndTime": "08/08/2025 00:00:00",
+            "Name": "JENNIEL ALEXANDRA ZAMBRANO SANCHEZ",
+            "FiscalRegistry": "V257115379",
+            "Address": "CALLE 3 CASA MANZANA 8 NRO 2-17 CONJUNTO RESIDENCIAL MUCURITAS. BIRUACA, APURE . ZONA POSTAL 7001",
+            "ShippingAddress": "CASA S/N CALLE 2 DE MAYO, SECTOR CAMPO RICO, PETARE",
+            "Phone": "+584243196577",
+            "EmailTo": "jennielzambrano@gmail.com",
+            "EmailCc": "jennielzambrano@gmail.com",
+            "Note1": "PRUEBA",
+            "PaymentType": 1,
+            "BCVMessage": "",
+            "Currency": "VES",
+            "TaxBase": 5,
+            "TaxAmount": 0.8,
+            "TaxPercent": 16,
+            "Total": 5.8,
+            "IGTFBaseAmount": 5.8,
+            "IGTFAmount": 0.174,
+            "IGTFPercentage": 3,
+            "GrandTotal": 5.8,
+            "ExemptAmount": 0,
+            "ConversionCurrency": "VES",
+            "TaxBaseVES": 5,
+            "TaxAmountVES": 0.8,
+            "TaxPercentVES": 16,
+            "TotalVES": 5.8,
+            "IGTFBaseAmountVES": 5.8,
+            "IGTFAmountVES": 0.174,
+            "IGTFPercentageVES": 3,
+            "GrandTotalVES": 5.8,
+            "ExemptAmountVES": 0,
+            "ExchangeRate": 1,
+            "Details": [
+                {
+                    "Description": "CONVENIO. PERSONAL CCOM 5 MBPS",
+                    "Quantity": 1,
+                    "UnitPrice": 5,
+                    "Amount": 5,
+                    "TaxAmount": 0.8,
+                    "TaxPercent": 16,
+                    "IsExempt": true,
+                    "OperationCode": "STE0199990102"
+                }
+            ],
+            "Extra": {
+                "DueDate": "08/12/2025 00:00:00",
+                "ContractNumber": "257115379"
+            }
+        },
+        {
+            "DocumentType": "FA",
+            "Number": 355499,
+            "EmissionDateAndTime": "08/08/2025 00:00:00",
+            "Name": "JENNIEL ALEXANDRA ZAMBRANO SANCHEZ",
+            "FiscalRegistry": "V257115379",
+            "Address": "CALLE 3 CASA MANZANA 8 NRO 2-17 CONJUNTO RESIDENCIAL MUCURITAS. BIRUACA, APURE . ZONA POSTAL 7001",
+            "ShippingAddress": "CASA S/N CALLE 2 DE MAYO, SECTOR CAMPO RICO, PETARE",
+            "Phone": "+584243196577",
+            "EmailTo": "jennielzambrano@gmail.com",
+            "EmailCc": "jennielzambrano@gmail.com",
+            "Note1": "PRUEBA",
+            "PaymentType": 1,
+            "BCVMessage": "",
+            "Currency": "VES",
+            "TaxBase": 5,
+            "TaxAmount": 0.8,
+            "TaxPercent": 16,
+            "Total": 5.8,
+            "IGTFBaseAmount": 5.8,
+            "IGTFAmount": 0.174,
+            "IGTFPercentage": 3,
+            "GrandTotal": 5.8,
+            "ExemptAmount": 0,
+            "ConversionCurrency": "VES",
+            "TaxBaseVES": 5,
+            "TaxAmountVES": 0.8,
+            "TaxPercentVES": 16,
+            "TotalVES": 5.8,
+            "IGTFBaseAmountVES": 5.8,
+            "IGTFAmountVES": 0.174,
+            "IGTFPercentageVES": 3,
+            "GrandTotalVES": 5.8,
+            "ExemptAmountVES": 0,
+            "ExchangeRate": 1,
+            "Details": [
+                {
+                    "Description": "CONVENIO. PERSONAL CCOM 5 MBPS",
+                    "Quantity": 1,
+                    "UnitPrice": 5,
+                    "Amount": 5,
+                    "TaxAmount": 0.8,
+                    "TaxPercent": 16,
+                    "IsExempt": true,
+                    "OperationCode": "STE0199990102"
+                }
+            ],
+            "Extra": {
+                "DueDate": "08/12/2025 00:00:00",
+                "ContractNumber": "257115379"
+            }
+        },
+        {
+            "DocumentType": "FA",
+            "Number": 355500,
+            "EmissionDateAndTime": "08/08/2025 00:00:00",
+            "Name": "JENNIEL ALEXANDRA ZAMBRANO SANCHEZ",
+            "FiscalRegistry": "V257115379",
+            "Address": "CALLE 3 CASA MANZANA 8 NRO 2-17 CONJUNTO RESIDENCIAL MUCURITAS. BIRUACA, APURE . ZONA POSTAL 7001",
+            "ShippingAddress": "CASA S/N CALLE 2 DE MAYO, SECTOR CAMPO RICO, PETARE",
+            "Phone": "+584243196577",
+            "EmailTo": "jennielzambrano@gmail.com",
+            "EmailCc": "jennielzambrano@gmail.com",
+            "Note1": "PRUEBA",
+            "PaymentType": 1,
+            "BCVMessage": "",
+            "Currency": "VES",
+            "TaxBase": 5,
+            "TaxAmount": 0.8,
+            "TaxPercent": 16,
+            "Total": 5.8,
+            "IGTFBaseAmount": 5.8,
+            "IGTFAmount": 0.174,
+            "IGTFPercentage": 3,
+            "GrandTotal": 5.8,
+            "ExemptAmount": 0,
+            "ConversionCurrency": "VES",
+            "TaxBaseVES": 5,
+            "TaxAmountVES": 0.8,
+            "TaxPercentVES": 16,
+            "TotalVES": 5.8,
+            "IGTFBaseAmountVES": 5.8,
+            "IGTFAmountVES": 0.174,
+            "IGTFPercentageVES": 3,
+            "GrandTotalVES": 5.8,
+            "ExemptAmountVES": 0,
+            "ExchangeRate": 1,
+            "Details": [
+                {
+                    "Description": "CONVENIO. PERSONAL CCOM 5 MBPS",
+                    "Quantity": 1,
+                    "UnitPrice": 5,
+                    "Amount": 5,
+                    "TaxAmount": 0.8,
+                    "TaxPercent": 16,
+                    "IsExempt": true,
+                    "OperationCode": "STE0199990102"
+                }
+            ],
+            "Extra": {
+                "DueDate": "08/12/2025 00:00:00",
+                "ContractNumber": "257115379"
+            }
+        },
+        {
+            "DocumentType": "FA",
+            "Number": 355501,
+            "EmissionDateAndTime": "08/08/2025 00:00:00",
+            "Name": "JENNIEL ALEXANDRA ZAMBRANO SANCHEZ",
+            "FiscalRegistry": "V257115379",
+            "Address": "CALLE 3 CASA MANZANA 8 NRO 2-17 CONJUNTO RESIDENCIAL MUCURITAS. BIRUACA, APURE . ZONA POSTAL 7001",
+            "ShippingAddress": "CASA S/N CALLE 2 DE MAYO, SECTOR CAMPO RICO, PETARE",
+            "Phone": "+584243196577",
+            "EmailTo": "jennielzambrano@gmail.com",
+            "EmailCc": "jennielzambrano@gmail.com",
+            "Note1": "PRUEBA",
+            "PaymentType": 1,
+            "BCVMessage": "",
+            "Currency": "VES",
+            "TaxBase": 5,
+            "TaxAmount": 0.8,
+            "TaxPercent": 16,
+            "Total": 5.8,
+            "IGTFBaseAmount": 5.8,
+            "IGTFAmount": 0.174,
+            "IGTFPercentage": 3,
+            "GrandTotal": 5.8,
+            "ExemptAmount": 0,
+            "ConversionCurrency": "VES",
+            "TaxBaseVES": 5,
+            "TaxAmountVES": 0.8,
+            "TaxPercentVES": 16,
+            "TotalVES": 5.8,
+            "IGTFBaseAmountVES": 5.8,
+            "IGTFAmountVES": 0.174,
+            "IGTFPercentageVES": 3,
+            "GrandTotalVES": 5.8,
+            "ExemptAmountVES": 0,
+            "ExchangeRate": 1,
+            "Details": [
+                {
+                    "Description": "CONVENIO. PERSONAL CCOM 5 MBPS",
+                    "Quantity": 1,
+                    "UnitPrice": 5,
+                    "Amount": 5,
+                    "TaxAmount": 0.8,
+                    "TaxPercent": 16,
+                    "IsExempt": true,
+                    "OperationCode": "STE0199990102"
+                }
+            ],
+            "Extra": {
+                "DueDate": "08/12/2025 00:00:00",
+                "ContractNumber": "257115379"
+            }
+        }
+    ]
+}
+https://www.unidigital.global/digitalinvoiceservice/api/batch/approve
+{
+    "Id": "b4bb3393-de4b-4da1-8d23-9f65a3279007"
+}
+https://mis-api.internetccom.net/sale/invoice/massive/dispatch/post
+{
+    "historyId": "552d92fb-9aa8-4230-b922-a2a8088c4323",
+    "batchId": "b4bb3393-de4b-4da1-8d23-9f65a3279007",
+    "invoices": [
+        {
+            "strongId": "d5e09876-88fa-434d-9622-f83d87ed09c7",
+            "serie": "0",
+            "serieStrongId": "3b633c48-271a-459f-bc8e-a35139d3a0ae",
+            "documenType": "Factura",
+            "number": "000355498"
+        },
+        {
+            "strongId": "a2fcd5d0-4738-4b08-a762-b9ea7506be73",
+            "serie": "0",
+            "serieStrongId": "3b633c48-271a-459f-bc8e-a35139d3a0ae",
+            "documenType": "Factura",
+            "number": "000355499"
+        },
+        {
+            "strongId": "c4b6668d-d307-4f14-a3b2-04df122c0374",
+            "serie": "0",
+            "serieStrongId": "3b633c48-271a-459f-bc8e-a35139d3a0ae",
+            "documenType": "Factura",
+            "number": "000355500"
+        },
+        {
+            "strongId": "9afb318c-4451-4228-b28c-731d8aa60d7b",
+            "serie": "0",
+            "serieStrongId": "3b633c48-271a-459f-bc8e-a35139d3a0ae",
+            "documenType": "Factura",
+            "number": "000355501"
+        }
+    ]
+}

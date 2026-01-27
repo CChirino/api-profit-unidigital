@@ -1,0 +1,85 @@
+### Local API Test Suite
+### Variables
+@baseUrl = http://localhost:5000/api/v1
+@baseUrlRemote = http://179.63.111.5:5000/api/v1
+@password = !!C.COMM!!AMPI@2023**
+@user = service_ccom 
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJDb2RfVXN1YXJpbyI6InNlcnZpY2VfY2NvbSIsImlhdCI6MTc1MDkxMTUxOCwiZXhwIjoxNzgyNDY5MTE4fQ.yoxCPWoF4KdQTo4CIWh0mFJAuZzUR9ar2_C18XPSN_8
+@seriesStrongId = 3b633c48-271a-459f-bc8e-a35139d3a0ae
+@templateId = 4195
+@batchId = ddfb898d-f400-4ef7-9abe-b021f807902e
+
+
+### test api
+GET {{baseUrl}}/
+Content-Type: application/json
+
+### Login to Local API
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+    "user": "{{user}}",
+    "pass": "{{password}}"
+}
+
+### Consultar lista de Series y Templates de Facturas Disponibles
+GET {{baseUrl}}/uni/series
+Authorization: Bearer {{accessToken}}
+
+### Consultar último documento
+POST {{baseUrl}}/uni/documents/last
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "serieStrongId": "{{seriesStrongId}}",
+    "documentType": "FA"
+}
+
+### Consultar Documentos de Venta de Profit
+# Requiere un token válido y envía la fecha límite en el cuerpo.
+POST {{baseUrl}}/profit/documents
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "fechaHasta": "2025-07-12"
+}
+
+### Consulta de Lotes de Procesamiento
+GET {{baseUrl}}/logs/batches?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+### Iniciar un nuevo lote de procesamiento
+POST {{baseUrl}}/processing/start
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "serieStrongId": "3b633c48-271a-459f-bc8e-a35139d3a0ae",
+  "fechaHasta": "2025-07-12"
+}
+
+### Consultar documentos de un lote de procesamiento (recibe el batchId del lote creado como argumento)
+GET {{baseUrl}}/batches/{{batchId}}/documents
+Authorization: Bearer {{accessToken}}
+
+### Aprobar lote de procesamiento (recibe el batchId del lote creado como argumento)
+POST {{baseUrl}}/batches/{{batchId}}/approve
+Authorization: Bearer {{accessToken}}
+
+#### Sincronizar controles de lote (recibe el batchId del lote creado como argumento)
+POST {{baseUrl}}/batches/{{batchId}}/sync-controls
+Authorization: Bearer {{accessToken}}
+
+### Cancelar lote de procesamiento (NUEVO)
+# Cancela un lote en Unidigital y en el log local.
+# Requiere el batchId y una razón en el cuerpo.
+POST {{baseUrl}}/batches/{{batchId}}/cancel
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "reason": "Cancelacion de lote Unidigital y log local"
+}

@@ -1,0 +1,159 @@
+### Unidigital API Test Suite
+### Variables
+@baseUrl = https://qa.unidigital.global/digitalinvoice-core
+@password = c4592cf9491779b960c9808bf1309e5724cf5e3c141432d1df96c84f5ab5e5bad2adb2105fe4f735cdf5fcbfd1d8143b5181d9770295649f486a2dcc1212f84b
+@user = c.com@unidigital.global
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjQwNDMyMjhmLTAwZWItNDNmZi05YTgzLTNjNmQ2MjBlYTFhNiIsIlJvbGVzIjoie1wiQWNjZXNzU2VyaWVcIjpbMF0sXCJBY2Nlc3NCaWxsaW5nVHlwZVwiOlswXSxcIkFjY2Vzc0RvY3VtZW50U3RhdHVzXCI6WzBdfSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImMuY29tQHVuaWRpZ2l0YWwuZ2xvYmFsIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6ImMuY29tQHVuaWRpZ2l0YWwuZ2xvYmFsIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9leHBpcmF0aW9uIjoiTm92IFR1ZSAwNCAyMDI1IDIwOjAzOjIxIFBNIiwiQ29tcGFueSI6ImYzYjYxMzIxLTNmYzAtNDA0ZS04ZDUzLTE1MDBmOWY2YWM4MyIsIm5iZiI6MTc2MjI3MjIwMSwiZXhwIjoxNzYyMzAxMDAxfQ.dIsdtZ66oQ6OfG9NPZGueEbHzkcft5VuFT3oZ7y0RXw
+@templateId = 4195
+
+### Login to Unidigital API
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+
+{
+    "UserName": "{{user}}",
+    "Password": "{{password}}"
+}
+
+
+### Consultar primer documento
+POST {{baseUrl}}/documents/first
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "Serie": "{{seriesStrongId}}",
+    "Type": "FA"
+}
+
+### Consultar ultimo documento
+POST {{baseUrl}}/documents/last
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "Serie": "{{seriesStrongId}}",
+    "Type": "FA"
+}
+
+### Consultar Documento por StrongId recibe JSON
+POST {{baseUrl}}/documents/viewjson/43a92ac7-d186-41e7-98ef-6931c0ee00a9
+Authorization: Bearer {{accessToken}}
+
+
+
+### Consultar Documento por Número de control
+POST {{baseUrl}}/documents/controlnumber/8035
+Authorization: Bearer {{accessToken}}
+
+
+### Consultar Documento por Numero de Serie
+POST {{baseUrl}}/documents/searchbynumberandserie
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "Number":"347556",
+    "Serie": "3b633c48-271a-459f-bc8e-a35139d3a0ae",
+    "DocumentType":"FA"
+}
+
+### Consultar Númnero de Control de Ciclo por Fecha
+POST {{baseUrl}}/documents/controlnumbers?fromDate=2024-1-1%2000%3A00%3A00&toDate=2024-1-30%2023%3A59%3A59
+Authorization: Bearer {{accessToken}}
+
+### Crear Ciclo de Facturación
+POST {{baseUrl}}/batch/open 
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "SerieStrongId": "{{seriesStrongId}}"
+}
+
+
+### Consultar Ciclo de Facturación por StrongId
+GET {{baseUrl}}/batch/ddfb898d-f400-4ef7-9abe-b021f807902e
+Authorization: Bearer {{accessToken}}
+
+### Agregar Documento a Ciclo de Facturación
+POST {{baseUrl}}/documents/create
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "BatchStrongId": "b5c39e98-c839-4e6c-a8de-8315d6eeaa23",
+  "Docs": [
+    {
+      "DocumentType": "FA",
+      "Number": "000348553",
+      "EmissionDateAndTime": "2025-06-16T08:47:00.000Z",
+      "DueDate": "2025-06-20T08:47:00.000Z",
+      "Name": "GENESIS YANABEL NIEVES FLORES",
+      "FiscalRegistry": "V242710610",
+      "Address": "CALLE PRINCIPAL CASA NRO 54 URB EL INGENIO SECTOR BARRIO EL ABANICO GUATIRE MIRANDA",
+      "Phone": "+584242974259",
+      "EmailTo": "genesis24271061@gmail.com",
+      "ShippingAddress": "CALLE PRINCIPAL CASA NRO 54 URB EL INGENIO SECTOR BARRIO EL ABANICO GUATIRE MIRANDA",
+      "Currency": "VES",
+      "PaymentType": "CRÉDITO",
+      "Total": 2554,
+      "TaxableAmount": 2201.72,
+      "TaxAmount": 352.28,
+      "GrandTotal": 2554,
+      "ExemptAmount": 0,
+      "TaxableAmountVES": 2201.72,
+      "TaxAmountVES": 352.28,
+      "TaxPercentVES": 16,
+      "TotalVES": 2554,
+      "IGTFBaseAmountVES": null,
+      "IGTFAmountVES": null,
+      "GrandTotalVES": 2554,
+      "AmountLettersVES": "DOS MIL QUINIENTOS CINCUENTA Y CUATRO BOLÍVARES ",
+      "ExchangeRate": 1,
+      "SystemReference": "PROFIT-FACT-000348553",
+      "Note1": "FACT N°  de Cliente 242710610 CORRESPONDIENTE MES DE JUNIO 2025",
+      "Note2": null,
+      "Note3": null,
+      "Extra": {},
+      "Details": []
+    }
+  ]
+}
+
+### Listar Lotes
+GET {{baseUrl}}/batch/
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+   "Status": 2,
+   "Date": "2025-06-11"
+}
+
+### Listar Documentos por Fecha
+POST {{baseUrl}}/documents/list?page=1&thefrom=2024-07-01 00:00:00&theTo=2024-07-30 23:59:59
+Authorization: Bearer {{accessToken}}
+
+
+### Aprobar Lote de Facturación
+POST {{baseUrl}}/batches/:id/approve
+Authorization: Bearer {{accessToken}}
+
+### Cerrar Ciclo de Facturación
+POST {{baseUrl}}/batch/close
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "Id": "44bf7602-1ecb-4129-91c5-70a3fb6f51d3"
+}
+
+### Cancelar Ciclo de Facturación
+POST {{baseUrl}}/batch/cancel
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "Id": "ddfb898d-f400-4ef7-9abe-b021f807902e"
+}
