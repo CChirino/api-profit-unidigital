@@ -1,6 +1,6 @@
 import logger from '../helpers/logger.js';
 // Importamos las funciones específicas del módulo de Unidigital
-import { getLastDocument } from '../modules/uni_mod.js';
+import { getLastDocument, getBatchDetails } from '../modules/uni_mod.js';
 import { getUnidigitalSeries, getUnidigitalTemplates } from '../helpers/unidigital_auth.js';
 
 
@@ -33,6 +33,21 @@ export const getAvailableSeries = async (req, res) => {
  * Controlador para consultar el último documento de Unidigital.
  * Espera { serieStrongId: "...", documentType: "..." } en el cuerpo de la solicitud.
  */
+export const getBatchDetailsController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ message: "El parámetro 'id' es requerido." });
+        }
+        logger.info(`Consultando detalles del batch ${id} en Unidigital.`);
+        const details = await getBatchDetails(id);
+        res.status(200).json({ message: "Detalles del batch obtenidos.", data: details });
+    } catch (error) {
+        logger.error(`Error en getBatchDetailsController: ${error.message}`);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export const getLastUnidigitalDocument = async (req, res) => {
     try {
         const { serieStrongId, documentType } = req.body;

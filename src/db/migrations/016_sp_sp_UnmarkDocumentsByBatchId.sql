@@ -8,9 +8,22 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Limpiar docs donde campo7 = BatchId (marcados por sp_MarkDocumentsForProcessing, aún no enviados)
     UPDATE dbo.saDocumentoVenta
-    SET campo7 = NULL,  -- BatchId
-        campo8 = NULL   -- Estado (o el campo que uses para indicar que está en un lote)
+    SET campo7 = NULL,
+        campo8 = NULL
     WHERE campo7 = @BatchId;
+
+    -- Limpiar docs donde campo8 = BatchId (marcados como FALLIDO-ENVIO, FALLIDO-VALIDACION, etc.)
+    UPDATE dbo.saDocumentoVenta
+    SET campo7 = NULL,
+        campo8 = NULL
+    WHERE campo8 = @BatchId;
+
+    -- Limpiar también saFacturaVenta para documentos FACT
+    UPDATE dbo.saFacturaVenta
+    SET campo7 = NULL,
+        campo8 = NULL
+    WHERE campo7 = @BatchId OR campo8 = @BatchId;
 END;
 GO

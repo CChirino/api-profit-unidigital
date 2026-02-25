@@ -1,4 +1,4 @@
-import { approveBatchInDb, cancelBatchInDb, assignBatchInDb, updateControlNumberInDb, getDocumentsByBatchId  } from '../modules/profit9_mod.js';
+import { approveBatchInDb, cancelBatchInDb, assignBatchInDb, updateControlNumberInDb, getDocumentsByBatchId, deleteOrphanBatchFromDb, clearDocumentsByRange  } from '../modules/profit9_mod.js';
 import { approveBatch, closeAndCancelBatch, getBatchDetails, getBatchDocuments} from '../modules/uni_mod.js';
 import logger from '../helpers/logger.js';
 
@@ -178,4 +178,81 @@ export const listBatchDocumentsController = async (req, res) => {
     }
 };
 
+export const deleteOrphanBatchController = async (req, res) => {
+    const { id } = req.params;
 
+    // Validar que el ID tenga el prefijo FAIL-
+    if (!id.startsWith('FAIL-')) {
+        return res.status(400).json({ 
+            message: "Solo se pueden eliminar lotes con prefijo FAIL- (lotes huérfanos)." 
+        });
+    }
+
+    try {
+        logger.info(`[deleteOrphanBatch] Eliminando lote huérfano: ${id}`);
+        
+        const deletedCount = await deleteOrphanBatchFromDb(id);
+        
+        if (deletedCount === 0) {
+            return res.status(404).json({ 
+                message: `No se encontró el lote huérfano ${id} o no pudo ser eliminado.` 
+            });
+        }
+        
+        logger.info(`Lote huérfano ${id} eliminado exitosamente.`);
+        res.status(200).json({ 
+            message: `Lote huérfano ${id} eliminado exitosamente.`,
+            deletedCount: deletedCount
+        });
+
+    } catch (error) {
+        const errorMessage = error.message || String(error);
+        logger.error(`Fallo al eliminar el lote huérfano ${id}: ${errorMessage}`);
+        
+        res.status(500).json({ 
+            message: "Error al eliminar el lote huérfano.", 
+            error: errorMessage 
+        });
+    }
+};
+
+export const clearDocumentsController = async (req, res) => {
+    const { docType, fromDoc, toDoc } = req.body;
+
+    // Validaciones
+    if (!docType || !fromDoc || !toDoc) {
+        return res.status(400).json({ 
+            message: "Los campos 'docType', 'fromDoc' y 'toDoc' son requeridos." 
+        });
+    }
+
+    const validDocTypes = ['FACT', 'N/CR', 'N/DB'];
+    if (!validDocTypes.includes(docType)) {
+        return res.status(400).json({ 
+            message: `Tipo de documento inválido. Valores permitidos: ${validDocTypes.join(', ')}` 
+        });
+    }
+
+    try {
+        logger.info(`[clearDocuments] Limpiando documentos tipo ${docType} del ${fromDoc} al ${toDoc}`);
+        
+        const clearedCount = await clearDocumentsByRange(docType, fromDoc, toDoc);
+        
+        res.status(200).json({ 
+            message: `${clearedCount} documentos limpiados exitosamente.`,
+            docType,
+            fromDoc,
+            toDoc,
+            clearedCount
+        });
+
+    } catch (error) {
+        const errorMessage = error.message || String(error);
+        logger.error(`Fallo al limpiar documentos: ${errorMessage}`);
+        
+        res.status(500).json({ 
+            message: "Error al limpiar documentos.", 
+            error: errorMessage 
+        });
+    }
+};

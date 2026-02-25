@@ -8,9 +8,11 @@ import {
     updateBatchLogStatus,
     getOpenBatchBySerie,
     countFailedDocumentsInBatch,
-    getAllDocumentsForRetry
+    getAllDocumentsForRetry,
+    unmarkDocumentsByBatchId
 } from '../modules/profit9_mod.js';
 import { round2 } from '../utils/round.js';
+import { validateUnidigitalDocument } from '../utils/unidigital_validator.js';
 import { createBatch, createDocuments, closeAndCancelBatch, closeBatch, getBatchDetails } from '../modules/uni_mod.js';
 import NumeroALetras from '../helpers/numeroaletras.js';
 
@@ -79,6 +81,15 @@ async function mapToUnidigitalDoc(profitDoc, renglones) {
         fiscalRegistryCode = 'V';
         // Si el RIF original no tenía letra (ej. "12345678"), usamos el string completo como número.
         fiscalRegistry = rifCompleto.replace(/[^0-9]/g, '');
+    } else {
+        // Limpiar caracteres no numéricos de la parte numérica del RIF (ej. "V12346A" → "12346")
+        fiscalRegistry = fiscalRegistry.replace(/[^0-9]/g, '');
+    }
+
+    // Unidigital exige entre 6 y 9 dígitos para el RIF numérico.
+    // Si excede 9 dígitos, truncar a los primeros 9.
+    if (fiscalRegistry.length > 9) {
+        fiscalRegistry = fiscalRegistry.substring(0, 9);
     }
 
     const isForeignCurrency = unidigitalCurrency !== 'VES';
@@ -97,9 +108,9 @@ async function mapToUnidigitalDoc(profitDoc, renglones) {
         for (const r of renglones) {
             const test = r.Amount;
             const amountDoc = round2(r.Amount || 0);
-            const amountVES = isForeignCurrency ? round2((r.Amount || 0) / exchangeRate) : amountDoc;
+            const amountVES = isForeignCurrency ? round2((r.Amount || 0) * exchangeRate) : amountDoc;
             const taxDoc = round2(r.TaxAmount || 0);
-            const taxVES = isForeignCurrency ? round2((r.TaxAmount || 0) / exchangeRate) : taxDoc;
+            const taxVES = isForeignCurrency ? round2((r.TaxAmount || 0) * exchangeRate) : taxDoc;
             const taxPercent = r.TaxAmount > 0 ? (r.TaxPercent || 16) : 0;
 
             if (r.TaxAmount === 0) {
@@ -131,8 +142,11 @@ async function mapToUnidigitalDoc(profitDoc, renglones) {
 
     const DiscountDoc = round2(profitDoc.descuento || 0);
     const PreviousBalanceDoc = round2(profitDoc.previousBalance || 0);
-    const DiscountVES = isForeignCurrency ? round2(DiscountDoc / exchangeRate) : DiscountDoc;
-    const PreviousBalanceVES = isForeignCurrency ? round2(PreviousBalanceDoc / exchangeRate) : PreviousBalanceDoc;
+    const DiscountVES = isForeignCurrency ? round2(DiscountDoc * exchangeRate) : DiscountDoc;
+    const PreviousBalanceVES = isForeignCurrency ? round2(PreviousBalanceDoc * exchangeRate) : PreviousBalanceDoc;
+
+    const tipDoc = round2(profitDoc.propina || profitDoc.tip || 0);
+    const tipVES = isForeignCurrency ? round2(tipDoc * exchangeRate) : tipDoc;
 
     // Totales en moneda del documento
     const subtotalDoc = round2(taxableItemsSumDoc + exemptAmountDoc);
@@ -147,9 +161,6 @@ async function mapToUnidigitalDoc(profitDoc, renglones) {
     const totalVES = round2(subtotalVES - DiscountVES + taxAmountVES + PreviousBalanceVES);
 
     // IGTF y propina (si aplica)
-    const tipDoc = round2(profitDoc.propina || profitDoc.tip || 0);
-    const tipVES = isForeignCurrency ? round2(tipDoc / exchangeRate) : tipDoc;
-    
     // igtf 3% sobre el total del documento (incluye propina si aplica)
     const IGTFPercentage = 3;
     const igtfBaseAmountDoc = 0 //round2(totalDoc);
@@ -184,7 +195,7 @@ async function mapToUnidigitalDoc(profitDoc, renglones) {
         FiscalRegistryCode: fiscalRegistryCode,
         FiscalRegistry: fiscalRegistry,
         Address: profitDoc.direc1 || process.env.DEFAULT_CLIENT_ADDRESS,
-        Phone: profitDoc.telefonos || process.env.DEFAULT_CLIENT_PHONE,
+        Phone: (profitDoc.telefonos || process.env.DEFAULT_CLIENT_PHONE || '').toString().substring(0, 20),
         EmailTo: profitDoc.email || process.env.DEFAULT_CLIENT_EMAIL,
         // Totales en moneda del documento
         ExemptAmount: round2(exemptAmountDoc) || 0,
@@ -204,6 +215,8 @@ async function mapToUnidigitalDoc(profitDoc, renglones) {
         // Totales en VES (para validación/visual)
         ExemptAmountVES: round2(exemptAmountVES) || 0,
         TaxBaseVES: round2(taxBaseVES) || 0,
+        SubtotalVES: round2(subtotalVES) || 0,
+        SubtotalPlusDiscountVES: round2(subtotalVES - DiscountVES + PreviousBalanceVES) || 0,
         TaxAmountVES: round2(taxAmountVES) || 0,
         TotalVES: round2(totalVES) || 0,
         IGTFBaseAmountVES: round2(igtfBaseAmountVes) ||  0,
@@ -328,7 +341,17 @@ async function processBatchFlow(serieStrongId, userEmail, fechaHastaDate, existi
                 try {
                     const renglones = await getDocumentRenglones(header.nro_doc, header.co_tipo_doc);
                     const fullDoc = await mapToUnidigitalDoc(header, renglones);
-                    docsToSend.push(fullDoc);
+                    
+                    // Validar documento antes de enviarlo a Unidigital
+                    const validation = validateUnidigitalDocument(fullDoc);
+                    if (!validation.isValid) {
+                        logger.error(`Doc ${header.nro_doc} rechazado por validación local: ${validation.errors.join(' | ')}`);
+                        await updateDocumentStatus(header.nro_doc, header.co_tipo_doc, 'FALLIDO-VALIDACION', unidigitalBatchId);
+                        documentsFailedInRun++;
+                        continue;
+                    }
+                    
+                    docsToSend.push(validation.doc);
                     processedHeaders.push(header);
                 } catch (enrichError) {
                     logger.error(`Error enriqueciendo doc ${header.nro_doc}. Se marcará como fallido. Error: ${enrichError.message}`);
@@ -359,15 +382,31 @@ async function processBatchFlow(serieStrongId, userEmail, fechaHastaDate, existi
                     const apiErrorMessage = sendError.response?.data?.message || sendError.response?.data?.errors?.[0]?.message || sendError.message;
                     logger.error(`¡FALLO CRÍTICO DE ENVÍO! Lote ${unidigitalBatchId} detenido. Razón: ${apiErrorMessage}`);
 
-                    // 2. Marcar los documentos de este sub-lote como fallidos.
-                    documentsFailedInRun += processedHeaders.length;
-                    for (const header of processedHeaders) {
-                        await updateDocumentStatus(header.nro_doc, header.co_tipo_doc, 'FALLIDO-ENVIO', unidigitalBatchId);
+                    // 2. Detectar si es un error de correlatividad.
+                    //    En este caso, Unidigital rechaza TODOS los docs del sub-batch,
+                    //    así que es seguro desmarcarlos para que se reprocesen correctamente.
+                    const isCorrelativeError = apiErrorMessage.includes('EnsureNumberCorrelativeByDocumentType') 
+                        || apiErrorMessage.includes('correlatividad');
+
+                    if (isCorrelativeError) {
+                        logger.warn(`[CORRELATIVIDAD] Error de correlatividad detectado. Desmarcando ${processedHeaders.length} docs del sub-lote para reprocesamiento.`);
+                        for (const header of processedHeaders) {
+                            await updateDocumentStatus(header.nro_doc, header.co_tipo_doc, null, null);
+                        }
+                    } else {
+                        // Para otros errores, marcar como fallidos normalmente.
+                        documentsFailedInRun += processedHeaders.length;
+                        for (const header of processedHeaders) {
+                            await updateDocumentStatus(header.nro_doc, header.co_tipo_doc, 'FALLIDO-ENVIO', unidigitalBatchId);
+                        }
                     }
 
                     // 3. Lanzar un nuevo error para detener completamente el bucle y la función processBatchFlow.
-                    //    Este error será capturado por el bloque catch principal.
-                    throw new Error(`Proceso detenido por fallo en Unidigital: ${apiErrorMessage}`);
+                    //    Incluimos flag de correlatividad para que el catch principal sepa cómo actuar.
+                    const batchError = new Error(`Proceso detenido por fallo en Unidigital: ${apiErrorMessage}`);
+                    batchError.isCorrelativeError = isCorrelativeError;
+                    batchError.documentsProcessedBeforeError = documentsProcessedInRun;
+                    throw batchError;
                     
                     // --- FIN DE LA LÓGICA MODIFICADA ---
                 }
@@ -405,13 +444,43 @@ async function processBatchFlow(serieStrongId, userEmail, fechaHastaDate, existi
     } catch (error) {
         const errorMessage = error.response?.data?.message || error.message || String(error);
         logger.error(`Error fatal durante el proceso para el lote ${unidigitalBatchId || 'N/A'}: ${errorMessage}`);
-       if (unidigitalBatchId) {
-            // Escenario 1: El error ocurrió DESPUÉS de crear el lote.
-            // Tenemos un ID, así que actualizamos el log existente.
+        
+        // --- LIMPIEZA AUTOMÁTICA PARA ERRORES DE CORRELATIVIDAD ---
+        // Si el error es de correlatividad y NO hubo documentos enviados exitosamente
+        // en sub-batches anteriores, es seguro desmarcar TODOS los docs del batch
+        // y cancelar el lote, ya que Unidigital rechazó todo.
+        const isCorrelativeError = error.isCorrelativeError || false;
+        const docsProcessedBefore = error.documentsProcessedBeforeError || 0;
+
+        if (isCorrelativeError && docsProcessedBefore === 0 && unidigitalBatchId) {
+            logger.warn(`[CORRELATIVIDAD] Error de correlatividad SIN docs exitosos previos. Auto-limpiando batch ${unidigitalBatchId}...`);
+            try {
+                // 1. Desmarcar todos los documentos del batch en Profit (campo7=NULL, campo8=NULL)
+                await unmarkDocumentsByBatchId(unidigitalBatchId);
+                logger.info(`[CORRELATIVIDAD] Documentos desmarcados para batch ${unidigitalBatchId}.`);
+                
+                // 2. Cancelar el lote en Unidigital
+                await closeAndCancelBatch(unidigitalBatchId, { reason: 'Error de correlatividad - auto-limpieza' });
+                logger.info(`[CORRELATIVIDAD] Lote ${unidigitalBatchId} cancelado en Unidigital.`);
+                
+                // 3. Actualizar log local como cancelado por correlatividad
+                await updateBatchLogStatus(unidigitalBatchId, 6, { errorMessage: `[AUTO-LIMPIEZA] ${errorMessage}` }); // 6 = Cancelado por correlatividad
+            } catch (cleanupError) {
+                logger.error(`[CORRELATIVIDAD] Error durante auto-limpieza del batch ${unidigitalBatchId}: ${cleanupError.message}`);
+                // Si falla la limpieza, marcar como error fatal para revisión manual
+                await updateBatchLogStatus(unidigitalBatchId, 5, { errorMessage: `[LIMPIEZA-FALLIDA] ${errorMessage}` });
+            }
+            
+            result.success = false;
+            result.batchId = unidigitalBatchId;
+            result.message = `[CORRELATIVIDAD] ${errorMessage}. El batch fue auto-limpiado. Verifique FIRST_DOC_NUMBER_FACT en .env y reintente.`;
+            return result;
+        }
+
+        // --- MANEJO ESTÁNDAR PARA OTROS ERRORES ---
+        if (unidigitalBatchId) {
             await updateBatchLogStatus(unidigitalBatchId, 5, { errorMessage }); // 5 = Error Fatal
         } else if (serieStrongId) {
-            // Escenario 2: El error ocurrió ANTES de crear el lote (ej. fallo en createBatch).
-            // No tenemos ID de lote, pero sí de serie. Creamos una entrada de log de error "huérfana".
             const pseudoBatchId = `FAIL-${serieStrongId.substring(0, 8)}-${Date.now()}`;
             logger.warn(`Creando entrada de log de error huérfano con ID: ${pseudoBatchId}`);
             await createBatchLogEntry({
@@ -424,11 +493,10 @@ async function processBatchFlow(serieStrongId, userEmail, fechaHastaDate, existi
                 firstDoc: 'N/A',
                 lastDoc: 'N/A',
                 totalDocs: 0,
-                status: 5, // Marcar directamente como Error Fatal
+                status: 5,
                 errorMessage: `Fallo al iniciar el lote: ${errorMessage}`
             });
         }
-        // Ya no se cancela ni desmarca automáticamente. Se deja abierto para revisión manual.
         result.success = false;
         result.batchId = unidigitalBatchId || null;
         result.message = errorMessage;
