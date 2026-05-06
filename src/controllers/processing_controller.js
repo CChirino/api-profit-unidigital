@@ -190,7 +190,7 @@ async function mapToUnidigitalDoc(profitDoc, renglones) {
     // Construir payload con campos en MONEDA_DOC y en VES; ConversionCurrency siempre VES para cumplir regla
     return {
         DocumentType: unidigitalDocType,
-        Number: (profitDoc.nro_doc || '0').toString().trim(),
+        Number: parseInt((profitDoc.nro_doc || '0').toString().trim(), 10),
         EmissionDateAndTime: new Date(profitDoc.fec_emis).toISOString(),
         currency: unidigitalCurrency,
         ConversionCurrency: 'VES', // asegurar al menos una VES según regla de Unidigital
@@ -278,8 +278,8 @@ async function processBatchFlow(serieStrongId, userEmail, fechaHastaDate, existi
                 return;
             }
             
-                // CORRECCIÓN: campo8 almacena el estado (FALLIDO-*), campo7 es el BatchId
-                documentsToProcess = allDocsInBatch.filter(doc => !doc.campo8 || doc.campo8.length < 30 || doc.campo8.startsWith('FALLIDO'));
+                // campo7 almacena el StrongId o estado (FALLIDO-*), campo8 es el BatchId
+                documentsToProcess = allDocsInBatch.filter(doc => !doc.campo7 || doc.campo7.length < 30 || doc.campo7.startsWith('FALLIDO'));
             logger.info(`[REINTENTO] Documentos totales en lote: ${allDocsInBatch.length}. Documentos a re-procesar: ${documentsToProcess.length}`);
             
         } else if (unidigitalBatchId) {
@@ -409,7 +409,8 @@ async function processBatchFlow(serieStrongId, userEmail, fechaHastaDate, existi
                     for (let i = 0; i < docsToSend.length; i++) {
                         const sentDoc = docsToSend[i];
                         const header = processedHeaders[i];
-                        const docResult = returnedDocs.find(d => String(d.Number) === String(sentDoc.Number) || d.SystemReference === sentDoc.SystemReference);
+                        const normalizeNum = (n) => String(parseInt(String(n), 10));
+                        const docResult = returnedDocs.find(d => normalizeNum(d.Number || d.number) === normalizeNum(sentDoc.Number) || d.SystemReference === sentDoc.SystemReference);
                         const fallbackByIndex = !docResult && returnedDocs.length === docsToSend.length ? returnedDocs[i] : null;
                         const documentId = (docResult?.StrongId || docResult?.strongId) || (fallbackByIndex?.StrongId || fallbackByIndex?.strongId) || 'ENVIADO-SIN-ID';
                         

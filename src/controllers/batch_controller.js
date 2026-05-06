@@ -98,15 +98,19 @@ export const syncControlsController = async (req, res) => {
                     let ProfitdocumentType
                     let ProfitControlnumber = doc.control.toString();
 
-                    // Mapear el tipo de documento y asignar la longitud correspondiente
+                    // Mapear el tipo de documento y asignar la longitud correspondiente (configurable via .env)
+                    const padLengthFact = parseInt(process.env.DOC_NUMBER_LENGTH_FACT || '9', 10);
+                    const padLengthNcr = parseInt(process.env.DOC_NUMBER_LENGTH_NCR || '8', 10);
+                    const padLengthNdb = parseInt(process.env.DOC_NUMBER_LENGTH_NDB || '10', 10);
+
                     if (doc.documentType === 'FA') {
-                        formattedNumber = doc.number.toString().padStart(9, '0'); // 9 dígitos para FACT
+                        formattedNumber = doc.number.toString().padStart(padLengthFact, '0');
                         ProfitdocumentType = 'FACT';
                     } else if (doc.documentType === 'NC') {
-                        formattedNumber = doc.number.toString().padStart(8, '0'); // 8 dígitos para N/CR
+                        formattedNumber = doc.number.toString().padStart(padLengthNcr, '0');
                         ProfitdocumentType = 'N/CR';
                     } else if (doc.documentType === 'ND') {
-                        formattedNumber = doc.number.toString().padStart(10, '0'); // 10 dígitos para N/DB
+                        formattedNumber = doc.number.toString().padStart(padLengthNdb, '0');
                         ProfitdocumentType = 'N/DB';
                     } else {
                         logger.warn(`Tipo de documento desconocido: ${doc.documentType}. No se procesará el documento ${doc.number}.`);

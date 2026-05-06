@@ -61,9 +61,9 @@ BEGIN
     FROM [dbo].[saDocumentoVenta] a
     INNER JOIN saCliente b ON a.co_cli = b.co_cli
     WHERE 
-        a.campo7 = @BatchId -- Filtramos por el lote específico
-        AND a.campo8 IS NULL -- Y solo los que no han sido enviados a Unidigital
+        a.campo8 = @BatchId -- Filtramos por el lote específico (campo8 = BatchId)
+        AND a.campo7 IS NULL -- Y solo los que no han sido procesados individualmente
     ORDER BY 
-        a.nro_doc
+        a.co_tipo_doc, a.nro_doc
 END
 GO

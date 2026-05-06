@@ -28,7 +28,7 @@ BEGIN
     WHERE 
         a.campo8 = @BatchId
     ORDER BY 
-        a.nro_doc;
+        a.co_tipo_doc, a.nro_doc;
 END
 GO
 

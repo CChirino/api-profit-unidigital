@@ -71,7 +71,7 @@ BEGIN
             OR (a.co_tipo_doc = 'N/DB' AND a.nro_doc >= @FirstDocNumber_NDB)
         )
     ORDER BY 
-        a.nro_doc
+        a.co_tipo_doc, a.nro_doc
     OFFSET CASE WHEN @PageSize IS NOT NULL THEN (@PageNumber - 1) * @PageSize ELSE 0 END ROWS
     FETCH NEXT CASE WHEN @PageSize IS NOT NULL THEN @PageSize ELSE 2147483647 END ROWS ONLY;
 END
