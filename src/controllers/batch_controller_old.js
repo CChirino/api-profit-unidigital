@@ -1,4 +1,4 @@
-import { approveBatchInDb, cancelBatchInDb, assignBatchInDb, updateControlNumberInDb, getDocumentsByBatchId  } from '../modules/profit9_mod.js';
+import { approveBatchInDb, cancelBatchInDb, assignBatchInDb, updateControlNumberInDb, getDocumentsByBatchId, deleteOrphanBatchFromDb, clearDocumentsByRange  } from '../modules/profit9_mod.js';
 import { approveBatch, closeAndCancelBatch, getBatchDetails, getBatchDocuments} from '../modules/uni_mod.js';
 import logger from '../helpers/logger.js';
 
@@ -38,15 +38,26 @@ export const cancelBatchController = async (req, res) => {
     }
 
     try {
+        // Detectar lotes huérfanos (prefijo FAIL-) que nunca existieron en Unidigital.
+        // Estos solo necesitan cancelarse en la BD local.
+        const isOrphanBatch = id.startsWith('FAIL-');
+        logger.info(`[cancelBatch] id=${id}, isOrphanBatch=${isOrphanBatch}`);
         
+        if (!isOrphanBatch) {
+            // Lote normal: intentamos cerrar/cancelar en Unidigital primero.
+            await closeAndCancelBatch(id, reason);
+        } else {
+            logger.info(`Lote huérfano detectado (${id}). Solo se cancelará en la BD local, sin llamar a Unidigital.`);
+        }
         
-        // Primero, intentamos cerrar el lote si está abierto.
-        // 1. Llamamos a la API de Unidigital PRIMERO.
-        await closeAndCancelBatch(id, reason);
-        //await closeBatch(id);
-        //await cancelBatch(id, reason);
-        // 2. Si la llamada a la API fue exitosa, actualizamos nuestro log local.
-        await cancelBatchInDb(id, reason);
+        // Actualizamos nuestro log local.
+        const canceledCount = await cancelBatchInDb(id, reason);
+        
+        if (canceledCount === 0) {
+            return res.status(409).json({ 
+                message: "No se pudo cancelar el lote. Verifique que existe y está en un estado cancelable (Cerrado o Error Fatal)." 
+            });
+        }
         
         res.status(200).json({ message: `Lote ${id} cancelado exitosamente.` });
 
@@ -167,4 +178,81 @@ export const listBatchDocumentsController = async (req, res) => {
     }
 };
 
+export const deleteOrphanBatchController = async (req, res) => {
+    const { id } = req.params;
 
+    // Validar que el ID tenga el prefijo FAIL-
+    if (!id.startsWith('FAIL-')) {
+        return res.status(400).json({ 
+            message: "Solo se pueden eliminar lotes con prefijo FAIL- (lotes huérfanos)." 
+        });
+    }
+
+    try {
+        logger.info(`[deleteOrphanBatch] Eliminando lote huérfano: ${id}`);
+        
+        const deletedCount = await deleteOrphanBatchFromDb(id);
+        
+        if (deletedCount === 0) {
+            return res.status(404).json({ 
+                message: `No se encontró el lote huérfano ${id} o no pudo ser eliminado.` 
+            });
+        }
+        
+        logger.info(`Lote huérfano ${id} eliminado exitosamente.`);
+        res.status(200).json({ 
+            message: `Lote huérfano ${id} eliminado exitosamente.`,
+            deletedCount: deletedCount
+        });
+
+    } catch (error) {
+        const errorMessage = error.message || String(error);
+        logger.error(`Fallo al eliminar el lote huérfano ${id}: ${errorMessage}`);
+        
+        res.status(500).json({ 
+            message: "Error al eliminar el lote huérfano.", 
+            error: errorMessage 
+        });
+    }
+};
+
+export const clearDocumentsController = async (req, res) => {
+    const { docType, fromDoc, toDoc } = req.body;
+
+    // Validaciones
+    if (!docType || !fromDoc || !toDoc) {
+        return res.status(400).json({ 
+            message: "Los campos 'docType', 'fromDoc' y 'toDoc' son requeridos." 
+        });
+    }
+
+    const validDocTypes = ['FACT', 'N/CR', 'N/DB'];
+    if (!validDocTypes.includes(docType)) {
+        return res.status(400).json({ 
+            message: `Tipo de documento inválido. Valores permitidos: ${validDocTypes.join(', ')}` 
+        });
+    }
+
+    try {
+        logger.info(`[clearDocuments] Limpiando documentos tipo ${docType} del ${fromDoc} al ${toDoc}`);
+        
+        const clearedCount = await clearDocumentsByRange(docType, fromDoc, toDoc);
+        
+        res.status(200).json({ 
+            message: `${clearedCount} documentos limpiados exitosamente.`,
+            docType,
+            fromDoc,
+            toDoc,
+            clearedCount
+        });
+
+    } catch (error) {
+        const errorMessage = error.message || String(error);
+        logger.error(`Fallo al limpiar documentos: ${errorMessage}`);
+        
+        res.status(500).json({ 
+            message: "Error al limpiar documentos.", 
+            error: errorMessage 
+        });
+    }
+};
