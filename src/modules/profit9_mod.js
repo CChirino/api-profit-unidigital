@@ -9,7 +9,8 @@ import { executeStoredProcedure } from "../helpers/db_executor.js";
  */
 export const getDocumentosVenta = async (fechaHasta, options = {}) => {
     const { tiposDoc = 'FACT,N/CR,N/DB', pageNumber = 1,pageSize = null, firstDocFact = process.env.FIRST_DOC_NUMBER_FACT,
-        firstDocNcr = process.env.FIRST_DOC_NUMBER_NCR, firstDocNdb = process.env.FIRST_DOC_NUMBER_NDB } = options;
+        firstDocNcr = process.env.FIRST_DOC_NUMBER_NCR, firstDocNdb = process.env.FIRST_DOC_NUMBER_NDB,
+        fechaDesde = process.env.MIN_DOCUMENT_DATE || '2025-01-01' } = options;
     try {
         const params = [
             { name: 'fechaHasta', type: sql.DateTime, value: fechaHasta },
@@ -19,6 +20,7 @@ export const getDocumentosVenta = async (fechaHasta, options = {}) => {
             { name: 'FirstDocNumber_FACT', type: sql.VarChar(20), value: firstDocFact },
             { name: 'FirstDocNumber_NCR', type: sql.VarChar(20), value: firstDocNcr },
             { name: 'FirstDocNumber_NDB', type: sql.VarChar(20), value: firstDocNdb },
+            { name: 'fechaDesde', type: sql.DateTime, value: fechaDesde },
         ];
         const documentos = await executeStoredProcedure('sp_GetDocumentosVentaParaProcesar', params);
         return documentos || [];
@@ -41,7 +43,8 @@ export const markDocumentsWithBatchId = async (
     tiposDoc = 'FACT,N/CR,N/DB',
     firstDocFact = process.env.FIRST_DOC_NUMBER_FACT,
     firstDocNcr = process.env.FIRST_DOC_NUMBER_NCR,
-    firstDocNdb = process.env.FIRST_DOC_NUMBER_NDB
+    firstDocNdb = process.env.FIRST_DOC_NUMBER_NDB,
+    fechaDesde = process.env.MIN_DOCUMENT_DATE || '2025-01-01'
 ) => {
     try {
         const params = [
@@ -51,7 +54,8 @@ export const markDocumentsWithBatchId = async (
             { name: 'FirstDocNumber_FACT', type: sql.VarChar(20), value: firstDocFact },
             { name: 'FirstDocNumber_NCR', type: sql.VarChar(20), value: firstDocNcr },
             { name: 'FirstDocNumber_NDB', type: sql.VarChar(20), value: firstDocNdb },
-            { name: 'MarkedCount', type: sql.Int, value: 0, output: true }
+            { name: 'MarkedCount', type: sql.Int, value: 0, output: true },
+            { name: 'fechaDesde', type: sql.DateTime, value: fechaDesde }
         ];
         const result = await executeStoredProcedure('sp_MarkDocumentsForProcessing', params);
         const markedCount = result.output?.MarkedCount || 0;
