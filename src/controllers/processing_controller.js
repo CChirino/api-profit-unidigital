@@ -240,6 +240,7 @@ async function mapToUnidigitalDoc(profitDoc, renglones) {
         nroDocRelacionado: profitDoc.co_tipo_doc !== 'FACT' ? profitDoc.nro_orig : '',
         tipoDocRelacionado: profitDoc.co_tipo_doc !== 'FACT' ? mapProfitDocTypeToUnidigital(profitDoc.doc_orig) : '',
         FechaDocRelacionado: profitDoc.co_tipo_doc !== 'FACT' ? profitDoc.fec_emis : '',
+        Anulado: profitDoc.anulado === true || profitDoc.anulado === 1 || profitDoc.anulado === '1',
         Details: detailsPayload,
         ExchangeRate: exchangeRate || 1,
         SystemReference: `PROFIT-${unidigitalDocType}-${(profitDoc.nro_doc || '').toString().trim().padStart(6, '0')}`,
