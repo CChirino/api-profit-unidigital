@@ -1,4 +1,4 @@
-import { approveBatchInDb, cancelBatchInDb, assignBatchInDb, updateControlNumberInDb, getDocumentsByBatchId, deleteOrphanBatchFromDb, clearDocumentsByRange  } from '../modules/profit9_mod.js';
+import { approveBatchInDb, cancelBatchInDb, assignBatchInDb, updateControlNumberInDb, getDocumentsByBatchId, deleteOrphanBatchFromDb, clearDocumentsByRange, unmarkDocumentsByBatchId  } from '../modules/profit9_mod.js';
 import { approveBatch, closeAndCancelBatch, getBatchDetails, getBatchDocuments} from '../modules/uni_mod.js';
 import logger from '../helpers/logger.js';
 
@@ -47,6 +47,9 @@ export const cancelBatchController = async (req, res) => {
         //await cancelBatch(id, reason);
         // 2. Si la llamada a la API fue exitosa, actualizamos nuestro log local.
         await cancelBatchInDb(id, reason);
+
+        // 3. Liberar los documentos del lote para que puedan ser reprocesados.
+        await unmarkDocumentsByBatchId(id);
         
         res.status(200).json({ message: `Lote ${id} cancelado exitosamente.` });
 
