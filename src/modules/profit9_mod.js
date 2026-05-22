@@ -398,3 +398,51 @@ export const getAllDocumentsForRetry = async (batchId) => {
         throw error;
     }
 };
+
+/**
+ * (LOGGING) Elimina un lote huérfano (prefijo FAIL-) de la tabla de registro local.
+ * Solo permite eliminar lotes que empiecen con 'FAIL-'.
+ * @param {string} batchId - El StrongId del lote a eliminar.
+ * @returns {Promise<number>} El número de filas afectadas (1 si tuvo éxito, 0 si no).
+ */
+export const deleteOrphanBatchFromDb = async (batchId) => {
+    try {
+        if (!batchId.startsWith('FAIL-')) {
+            throw new Error('Solo se pueden eliminar lotes con prefijo FAIL-');
+        }
+        const params = [
+            { name: 'BatchStrongId', type: sql.VarChar(50), value: batchId }
+        ];
+        const result = await executeStoredProcedure('sp_DeleteOrphanBatchLog', params);
+        return result.recordset?.[0]?.DeletedCount || result[0]?.DeletedCount || 0;
+    } catch (err) {
+        logger.error(`Error al eliminar el lote huérfano ${batchId} de la BD local: ${err.message}`);
+        throw err;
+    }
+};
+
+/**
+ * (MANTENIMIENTO) Limpia los campos campo7 y campo8 de documentos en un rango de números.
+ * Esto permite que los documentos puedan ser reprocesados.
+ * @param {string} docType - Tipo de documento ('FACT', 'N/CR', 'N/DB').
+ * @param {string} fromDoc - Número de documento inicial (inclusive).
+ * @param {string} toDoc - Número de documento final (inclusive).
+ * @returns {Promise<number>} Cantidad de documentos limpiados.
+ */
+export const clearDocumentsByRange = async (docType, fromDoc, toDoc) => {
+    try {
+        const params = [
+            { name: 'DocType', type: sql.VarChar(10), value: docType },
+            { name: 'FromDoc', type: sql.VarChar(20), value: fromDoc },
+            { name: 'ToDoc', type: sql.VarChar(20), value: toDoc },
+            { name: 'ClearedCount', type: sql.Int, value: 0, output: true }
+        ];
+        const result = await executeStoredProcedure('sp_ClearDocumentsByRange', params);
+        const clearedCount = result.output?.ClearedCount || 0;
+        logger.info(`${clearedCount} documentos limpiados (tipo: ${docType}, rango: ${fromDoc} - ${toDoc})`);
+        return clearedCount;
+    } catch (err) {
+        logger.error(`Error al limpiar documentos (tipo: ${docType}, rango: ${fromDoc} - ${toDoc}): ${err.message}`);
+        throw err;
+    }
+};

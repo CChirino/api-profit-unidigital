@@ -1,6 +1,6 @@
 // filepath: c:\Users\frank\OneDrive\Dev\ProfitUnidigital\src/routes/api_batch_routes.js
 import { Router } from 'express';
-import { approveBatchController, cancelBatchController, syncControlsController, listBatchDocumentsController } from '../controllers/batch_controller.js';
+import { approveBatchController, cancelBatchController, syncControlsController, listBatchDocumentsController, deleteOrphanBatchController, clearDocumentsController } from '../controllers/batch_controller.js';
 import { requireToken } from '../middlewares/require_token.js';
 
 const router = Router();
@@ -15,6 +15,12 @@ router.post('/:id/cancel', requireToken, cancelBatchController);
 router.post('/:id/sync-controls', requireToken, syncControlsController);
 
 // GET /api/v1/batches/{id}/documents
-router.get('/:id/documents', requireToken, listBatchDocumentsController); 
+router.get('/:id/documents', requireToken, listBatchDocumentsController);
+
+// DELETE /api/v1/batches/{id}/orphan
+router.delete('/:id/orphan', requireToken, deleteOrphanBatchController);
+
+// POST /api/v1/batches/clear-documents
+router.post('/clear-documents', requireToken, clearDocumentsController);
 
 export default router;
